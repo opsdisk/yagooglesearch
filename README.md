@@ -113,7 +113,7 @@ client = yagooglesearch.SearchClient(
 )
 ```
 
-Supported proxy schemas are based off those supported in the Python `requests` library
+Supported proxy schemes are based off those supported in the Python `requests` library
 (<https://docs.python-requests.org/en/master/user/advanced/#proxies>):
 
 * `http`
