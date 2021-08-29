@@ -1,0 +1,7 @@
+build/
+dist/
+/yagooglesearch.egg-info/
+*.log
+__pycache__/
+.venv/
+.vscode/
