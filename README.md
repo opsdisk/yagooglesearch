@@ -76,9 +76,9 @@ for url in urls:
 ## Google is blocking me!
 
 Low and slow is the strategy when executing Google searches using `yagooglesearch`.  If you start getting HTTP 429
-responses, Google has rightfully detected you as a bot and will block your IP for a set period of time.  `yagooglesearch`
-is not able to bypass CAPTCHA, but you can do this manually by performing a Google search from a browser and proving
-you are a human.
+responses, Google has rightfully detected you as a bot and will block your IP for a set period of time.
+`yagooglesearch` is not able to bypass CAPTCHA, but you can do this manually by performing a Google search from a
+browser and proving you are a human.
 
 The criteria and thresholds to getting blocked is unknown, but in general, randomizing the user agent, waiting enough
 time between paged search results (7-17 seconds), and waiting enough time between different Google searches
@@ -125,7 +125,9 @@ Supported proxy schemes are based off those supported in the Python `requests` l
 
 ## Multiple proxies
 
-If you want to use multiple proxies, that burden is on the script utilizing the `yagooglesearch` library to instantiate a new `yagooglesearch.SearchClient` object with the different proxy. Below is an example of looping through a list of proxies:
+If you want to use multiple proxies, that burden is on the script utilizing the `yagooglesearch` library to instantiate
+a new `yagooglesearch.SearchClient` object with the different proxy. Below is an example of looping through a list of
+proxies:
 
 ```python
 import yagooglesearch
