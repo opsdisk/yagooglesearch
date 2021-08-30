@@ -231,11 +231,19 @@ class SearchClient:
         :return: URL string
         """
 
+        ROOT_LOGGER.debug(f"pre filter_search_result_urls() link: {link}")
+
         try:
-            # Decode hidden URLs.
+            # Extract URL from parameter.
             if link.startswith("/url?"):
                 urlparse_object = urllib.parse.urlparse(link, scheme="http")
-                link = urllib.parse.parse_qs(urlparse_object.query)["q"][0]
+
+                # The "q" key exists most of the time.
+                try:
+                    link = urllib.parse.parse_qs(urlparse_object.query)["q"][0]
+                # Sometimes, only the "url" key does though.
+                except KeyError:
+                    link = urllib.parse.parse_qs(urlparse_object.query)["url"][0]
 
             # Create a urlparse object.
             urlparse_object = urllib.parse.urlparse(link, scheme="http")
@@ -247,13 +255,15 @@ class SearchClient:
                 )
                 link = None
 
-            # TODO: False positives if actually google dorking for site:google.com
+            # TODO: Generates false positives if specifing an actual Google site, e.g. "site:google.com fiber".
             if urlparse_object.netloc and ("google" in urlparse_object.netloc.lower()):
                 ROOT_LOGGER.debug(f'Excluding URL because it contains "google": {link}')
                 link = None
 
         except Exception:
             link = None
+
+        ROOT_LOGGER.debug(f"post filter_search_result_urls() link: {link}")
 
         return link
 
@@ -398,6 +408,7 @@ class SearchClient:
                 try:
                     link = a["href"]
                 except KeyError:
+                    ROOT_LOGGER.warning(f"No href for link: {link}")
                     continue
 
                 # Filter invalid links and links pointing to Google itself.
