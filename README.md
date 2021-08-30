@@ -27,7 +27,7 @@ interesting information/discussion on it:
 * Author created a separate [Terms and Conditions](https://github.com/aviaryan/python-gsearch/blob/master/T_AND_C.md)
 * ...that contained link to this [blog](https://benbernardblog.com/web-scraping-and-crawling-are-perfectly-legal-right/)
 
-Google's preferred method is to use their [API](<https://developers.google.com/custom-search/v1/overview>.
+Google's preferred method is to use their [API](https://developers.google.com/custom-search/v1/overview).
 
 ## Installation
 
