@@ -31,6 +31,12 @@ Google's preferred method is to use their [API](https://developers.google.com/cu
 
 ## Installation
 
+## pip
+
+```bash
+pip install yagooglesearch
+```
+
 ## <span>setup.py</span>
 
 ```bash
@@ -39,12 +45,6 @@ cd yagooglesearch
 virtualenv -p python3.7 .venv  # If using a virtual environment.
 source .venv/bin/activate  # If using a virtual environment.
 python setup.py install
-```
-
-## pip
-
-```bash
-pip install yagooglesearch
 ```
 
 ## Usage
