@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -184,28 +184,28 @@ class SearchClient:
 
         # First search requesting the default 10 search results.
         self.url_search = (
-            f"https://www.google.{self.tld}/search?lr=lang_{self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang}&"
             f"q={self.query}&btnG=Google+Search&tbs={self.tbs}&safe={self.safe}&"
             f"cr={self.country}&filter=0"
         )
 
         # Subsequent searches starting at &start= and retrieving 10 search results at a time.
         self.url_next_page = (
-            f"https://www.google.{self.tld}/search?lr=lang_{self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang}&"
             f"q={self.query}&start={self.start}&tbs={self.tbs}&safe={self.safe}&"
             f"cr={self.country}&filter=0"
         )
 
         # First search requesting more than the default 10 search results.
         self.url_search_num = (
-            f"https://www.google.{self.tld}/search?lr=lang_{self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang}&"
             f"q={self.query}&num={self.num}&btnG=Google+Search&tbs={self.tbs}&"
             f"safe={self.safe}&cr={self.country}&filter=0"
         )
 
         # Subsequent searches starting at &start= and retrieving &num= search results at a time.
         self.url_next_page_num = (
-            f"https://www.google.{self.tld}/search?lr=lang_{self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang}&"
             f"q={self.query}&start={self.start}&num={self.num}&tbs={self.tbs}&"
             f"safe={self.safe}&cr={self.country}&filter=0"
         )

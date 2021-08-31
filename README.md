@@ -121,7 +121,7 @@ Supported proxy schemes are based off those supported in the Python `requests` l
 * `socks5` - "causes the DNS resolution to happen on the client, rather than on the proxy server."  You likely
   **do not** want this since all DNS lookups would source from where `yagooglesearch` is being run instead of the proxy.
 * `socks5h` - "If you want to resolve the domains on the proxy server, use socks5h as the scheme."  This is the
-  **best**  option if you are using SOCKS because the entire DNS lookup and Google search is sourced from 1 IP address.
+  **best**  option if you are using SOCKS because the DNS lookup and Google search is sourced from the proxy IP address.
 
 ## Multiple proxies
 
