@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -82,6 +82,7 @@ class SearchClient:
         http_429_cool_off_time_in_minutes=60,
         http_429_cool_off_factor=1.1,
         proxy="",
+        verify_ssl=True,
         verbosity=5,
     ):
 
@@ -108,6 +109,8 @@ class SearchClient:
         :param float http_429_cool_off_factor: Factor to multiply by http_429_cool_off_time_in_minutes for each HTTP 429
             detected.
         :param str proxy: HTTP(S) or SOCKS5 proxy to use.
+        :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks. Defaults to True.
+            This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
 
         :rtype: List of str
@@ -129,6 +132,7 @@ class SearchClient:
         self.http_429_cool_off_time_in_minutes = http_429_cool_off_time_in_minutes
         self.http_429_cool_off_factor = http_429_cool_off_factor
         self.proxy = proxy
+        self.verify_ssl = verify_ssl
         self.verbosity = verbosity
 
         # Assign log level.
@@ -175,6 +179,10 @@ class SearchClient:
                 "http": self.proxy,
                 "https": self.proxy,
             }
+
+        # Suppress warning messages if verify_ssl is disabled.
+        if not self.verify_ssl:
+            requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
     def update_urls(self):
         """Update search URLs being used."""
@@ -234,8 +242,9 @@ class SearchClient:
         ROOT_LOGGER.debug(f"pre filter_search_result_urls() link: {link}")
 
         try:
-            # Extract URL from parameter.
-            if link.startswith("/url?"):
+            # Extract URL from parameter.  Once in a while the full "http://www.google.com/url?" exists instead of just
+            # "/url?".  After a re-run, it disappears and "/url?" is present...might be a caching thing?
+            if link.startswith("/url?") or link.startswith("http://www.google.com/url?"):
                 urlparse_object = urllib.parse.urlparse(link, scheme="http")
 
                 # The "q" key exists most of the time.
@@ -294,7 +303,9 @@ class SearchClient:
         }
 
         ROOT_LOGGER.info(f"Requesting URL: {url}")
-        response = requests.get(url, proxies=self.proxy_dict, headers=headers, cookies=self.cookies, timeout=15)
+        response = requests.get(
+            url, proxies=self.proxy_dict, headers=headers, cookies=self.cookies, timeout=15, verify=self.verify_ssl
+        )
 
         # Update the cookies.
         self.cookies = response.cookies
@@ -303,10 +314,11 @@ class SearchClient:
         http_response_code = response.status_code
 
         # debug_requests_response(response)
-        ROOT_LOGGER.debug(f"     status_code: {http_response_code}")
-        ROOT_LOGGER.debug(f"     proxy: {self.proxy}")
-        ROOT_LOGGER.debug(f"     headers: {headers}")
-        ROOT_LOGGER.debug(f"     cookies: {self.cookies}")
+        ROOT_LOGGER.debug(f"    status_code: {http_response_code}")
+        ROOT_LOGGER.debug(f"    headers: {headers}")
+        ROOT_LOGGER.debug(f"    cookies: {self.cookies}")
+        ROOT_LOGGER.debug(f"    proxy: {self.proxy}")
+        ROOT_LOGGER.debug(f"    verify_ssl: {self.verify_ssl}")
 
         html = ""
 
