@@ -13,6 +13,7 @@ heavily based off the [googlesearch](https://github.com/MarioVilas/googlesearch)
 * Randomizing delay times between retrieving paged search results (i.e., clicking on page 2 for more results)
 * HTTP(S) and SOCKS5 proxy support
 * Leveraging `requests` library for HTTP requests and cookie management
+* Adds "&filter=0" by default to search URLs to prevent any omission or filtering of search results by Google
 * Console and file logging
 * Python 3.6+
 
@@ -61,7 +62,7 @@ client = yagooglesearch.SearchClient(
     http_429_cool_off_time_in_minutes=45,
     http_429_cool_off_factor=1.5,
     proxy="socks5h://127.0.0.1:9050",
-    verbosity=5
+    verbosity=5,
 )
 client.assign_random_user_agent()
 
@@ -123,6 +124,40 @@ Supported proxy schemes are based off those supported in the Python `requests` l
 * `socks5h` - "If you want to resolve the domains on the proxy server, use socks5h as the scheme."  This is the
   **best**  option if you are using SOCKS because the DNS lookup and Google search is sourced from the proxy IP address.
 
+## HTTPS proxies and SSL/TLS certificates
+
+If you are using a self-signed certificate for an HTTPS proxy, you will likely need to disable SSL/TLS verification when
+either:
+
+1) Instantiating the `yagooglesearch.SearchClient` object:
+
+```python
+import yagooglesearch
+
+query = "site:github.com"
+
+client = yagooglesearch.SearchClient(
+    query,
+    proxy="http://127.0.0.1:8080",
+    verify_ssl=False,
+    verbosity=5,
+)
+```
+
+2) or after instantiation:
+
+```python
+query = "site:github.com"
+
+client = yagooglesearch.SearchClient(
+    query,
+    proxy="http://127.0.0.1:8080",
+    verbosity=5,
+)
+
+client.verify_ssl = False
+```
+
 ## Multiple proxies
 
 If you want to use multiple proxies, that burden is on the script utilizing the `yagooglesearch` library to instantiate
@@ -135,7 +170,7 @@ import yagooglesearch
 proxies = [
     "socks5h://127.0.0.1:9050",
     "socks5h://127.0.0.1:9051",
-    "socks5h://127.0.0.1:9052",
+    "http://127.0.0.1:9052",  # HTTPS proxy with a self-signed SSL/TLS certificate.
 ]
 
 search_queries = [
@@ -157,6 +192,10 @@ for search_query in search_queries:
         search_query,
         proxy=proxies[proxy_index],
     )
+
+    # Only disable SSL/TLS verification for the HTTPS proxy using a self-signed certificate.
+    if proxies[proxy_index].startswith("http://"):
+        client.verify_ssl = False
 
     urls_list = client.search()
 
