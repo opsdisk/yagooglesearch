@@ -348,7 +348,7 @@ class SearchClient:
                 F - FX agrees to tracking. Modifying it to just F seems to consent with 'no' to personalized stuff.
                     Not tested, solely based off of
                     https://github.com/benbusby/whoogle-search/issues/311#issuecomment-841065630
-                XYZ- Random 3-digit number assigned to the first response cookie.
+                XYZ - Random 3-digit number assigned to the first response cookie.
                 """
                 self.cookies = {"CONSENT": f"YES+shp.gws-20211108-0-RC1.fr+F+{number}"}
 
