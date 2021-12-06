@@ -320,6 +320,44 @@ class SearchClient:
         ROOT_LOGGER.debug(f"    proxy: {self.proxy}")
         ROOT_LOGGER.debug(f"    verify_ssl: {self.verify_ssl}")
 
+        # Google throws up a consent page for searches sourcing from a European Union country IP location.
+        # See https://github.com/benbusby/whoogle-search/issues/311
+        try:
+            if response.cookies["CONSENT"].startswith("PENDING+"):
+
+                ROOT_LOGGER.warning(
+                    "Looks like your IP address is sourcing from a European Union location...your search results may "
+                    "vary, but I'll try and work around this by updating the cookie."
+                )
+
+                # Convert the cookiejar data struture to a Python dict.
+                cookie_dict = requests.utils.dict_from_cookiejar(self.cookies)
+
+                # Pull out the random number assigned to the response cookie.
+                number = cookie_dict["CONSENT"].split("+")[1]
+
+                # See https://github.com/benbusby/whoogle-search/pull/320/files
+                """
+                Attempting to disect/breakdown the new cookie response values.
+
+                YES - Accept consent
+                shp - ?
+                gws - "server:" header value returned from original request.  Maybe Google Workspace plus a build?
+                fr - Original tests sourced from France.  Assuming this is the country code.  Country code was changed
+                    to .de and it still worked.
+                F - FX agrees to tracking. Modifying it to just F seems to consent with "no" to personalized stuff.
+                    Not tested, solely based off of
+                    https://github.com/benbusby/whoogle-search/issues/311#issuecomment-841065630
+                XYZ - Random 3-digit number assigned to the first response cookie.
+                """
+                self.cookies = {"CONSENT": f"YES+shp.gws-20211108-0-RC1.fr+F+{number}"}
+
+                ROOT_LOGGER.info(f"Updating cookie to: {self.cookies}")
+
+        # "CONSENT" cookie does not exist.
+        except KeyError:
+            pass
+
         html = ""
 
         if http_response_code == 200:
