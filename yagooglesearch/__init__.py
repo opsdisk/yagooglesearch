@@ -327,7 +327,7 @@ class SearchClient:
 
                 ROOT_LOGGER.warning(
                     "Looks like your IP address is sourcing from a European Union location...your search results may "
-                    "vary, but I'll try and work around this."
+                    "vary, but I'll try and work around this by updating the cookie."
                 )
 
                 # Convert the cookiejar data struture to a Python dict.
@@ -345,7 +345,7 @@ class SearchClient:
                 gws - "server:" header value returned from original request.  Maybe Google Workspace plus a build?
                 fr - Original tests sourced from France.  Assuming this is the country code.  Country code was changed
                     to .de and it still worked.
-                F - FX agrees to tracking. Modifying it to just F seems to consent with 'no' to personalized stuff.
+                F - FX agrees to tracking. Modifying it to just F seems to consent with "no" to personalized stuff.
                     Not tested, solely based off of
                     https://github.com/benbusby/whoogle-search/issues/311#issuecomment-841065630
                 XYZ - Random 3-digit number assigned to the first response cookie.
