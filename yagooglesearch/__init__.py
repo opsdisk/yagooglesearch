@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.2.0"
+__version__ = "1.4.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -79,6 +79,7 @@ class SearchClient:
         max_search_result_urls_to_return=100,
         delay_between_paged_results_in_seconds=list(range(7, 18)),
         user_agent=None,
+        yagooglesearch_manages_http_429s=True,
         http_429_cool_off_time_in_minutes=60,
         http_429_cool_off_factor=1.1,
         proxy="",
@@ -88,7 +89,7 @@ class SearchClient:
 
         """
         SearchClient
-        :param str query: Query string. Must NOT be url-encoded.
+        :param str query: Query string.  Must NOT be url-encoded.
         :param str tld: Top level domain.
         :param str lang: Language.
         :param str tbs: Verbatim search or time limits (e.g., "qdr:h" => last hour, "qdr:d" => last 24 hours, "qdr:m"
@@ -96,20 +97,22 @@ class SearchClient:
         :param str safe: Safe search.
         :param int start: First page of results to retrieve.
         :param int num: Max number of results to pull back per page.  Capped at 100 by Google.
-        :param str country: Country or region to focus the search on. Similar to changing the TLD, but does not yield
+        :param str country: Country or region to focus the search on.  Similar to changing the TLD, but does not yield
             exactly the same results.  Only Google knows why...
-        :param dict extra_params: A dictionary of extra HTTP GET parameters, which must be URL encoded. For example if
+        :param dict extra_params: A dictionary of extra HTTP GET parameters, which must be URL encoded.  For example if
             you don't want Google to filter similar results you can set the extra_params to {'filter': '0'} which will
             append '&filter=0' to every query.
         :param int max_search_result_urls_to_return: Max URLs to return for the entire Google search.
         :param int delay_between_paged_results_in_seconds: Time to wait between HTTP requests for consecutive pages for
             the same search query.
         :param str user_agent: Hard-coded user agent for the HTTP requests.
+        :param bool yagooglesearch_manages_http_429s: Determines if yagooglesearch will handle HTTP 429 cool off and
+           retries.  Disable if you want to manage HTTP 429 responses.
         :param int http_429_cool_off_time_in_minutes: Minutes to sleep if an HTTP 429 is detected.
         :param float http_429_cool_off_factor: Factor to multiply by http_429_cool_off_time_in_minutes for each HTTP 429
             detected.
         :param str proxy: HTTP(S) or SOCKS5 proxy to use.
-        :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks. Defaults to True.
+        :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks.  Defaults to True.
             This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
 
@@ -129,6 +132,7 @@ class SearchClient:
         self.max_search_result_urls_to_return = max_search_result_urls_to_return
         self.delay_between_paged_results_in_seconds = delay_between_paged_results_in_seconds
         self.user_agent = user_agent
+        self.yagooglesearch_manages_http_429s = yagooglesearch_manages_http_429s
         self.http_429_cool_off_time_in_minutes = http_429_cool_off_time_in_minutes
         self.http_429_cool_off_factor = http_429_cool_off_factor
         self.proxy = proxy
@@ -362,14 +366,24 @@ class SearchClient:
 
         if http_response_code == 200:
             html = response.text
+
         elif http_response_code == 429:
+
             ROOT_LOGGER.warning("Google is blocking your IP for making too many requests in a specific time period.")
+
+            # Calling script does not want yagooglesearch to handle HTTP 429 cool off and retry.  Just return a
+            # notification string.
+            if not self.yagooglesearch_manages_http_429s:
+                ROOT_LOGGER.info("Since yagooglesearch_manages_http_429s=False, yagooglesearch is done.")
+                return "HTTP_429_detected"
+
             ROOT_LOGGER.info(f"Sleeping for {self.http_429_cool_off_time_in_minutes} minutes...")
             time.sleep(self.http_429_cool_off_time_in_minutes * 60)
             self.http_429_detected()
 
             # Try making the request again.
             html = self.get_page(url)
+
         else:
             ROOT_LOGGER.warning(f"HTML response code: {http_response_code}")
 
