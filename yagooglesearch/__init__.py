@@ -77,7 +77,7 @@ class SearchClient:
         country="",
         extra_params=None,
         max_search_result_urls_to_return=100,
-        delay_between_paged_results_in_seconds=list(range(7, 18)),
+        minimum_delay_between_paged_results_in_seconds=7,
         user_agent=None,
         yagooglesearch_manages_http_429s=True,
         http_429_cool_off_time_in_minutes=60,
@@ -103,8 +103,9 @@ class SearchClient:
             you don't want Google to filter similar results you can set the extra_params to {'filter': '0'} which will
             append '&filter=0' to every query.
         :param int max_search_result_urls_to_return: Max URLs to return for the entire Google search.
-        :param int delay_between_paged_results_in_seconds: Time to wait between HTTP requests for consecutive pages for
-            the same search query.
+        :param int minimum_delay_between_paged_results_in_seconds: Minimum time to wait between HTTP requests for
+            consecutive pages for the same search query.  The actual time will be a random value between this minimum
+            value and value + 11 to make it look more human.
         :param str user_agent: Hard-coded user agent for the HTTP requests.
         :param bool yagooglesearch_manages_http_429s: Determines if yagooglesearch will handle HTTP 429 cool off and
            retries.  Disable if you want to manage HTTP 429 responses.
@@ -130,7 +131,7 @@ class SearchClient:
         self.country = country
         self.extra_params = extra_params
         self.max_search_result_urls_to_return = max_search_result_urls_to_return
-        self.delay_between_paged_results_in_seconds = delay_between_paged_results_in_seconds
+        self.minimum_delay_between_paged_results_in_seconds = minimum_delay_between_paged_results_in_seconds
         self.user_agent = user_agent
         self.yagooglesearch_manages_http_429s = yagooglesearch_manages_http_429s
         self.http_429_cool_off_time_in_minutes = http_429_cool_off_time_in_minutes
@@ -446,6 +447,10 @@ class SearchClient:
             # Request Google search results.
             html = self.get_page(url)
 
+            # HTTP 429 message returned from get_page() function, return to calling script.
+            if html == "HTTP_429_detected":
+                return "HTTP_429_detected"
+
             # Create the BeautifulSoup object.
             soup = BeautifulSoup(html, "html.parser")
 
@@ -523,6 +528,11 @@ class SearchClient:
                 url = self.url_next_page_num
 
             # Randomize sleep time between paged requests to make it look more human.
-            random_sleep_time = random.choice(self.delay_between_paged_results_in_seconds)
+            random_sleep_time = random.choice(
+                range(
+                    self.minimum_delay_between_paged_results_in_seconds,
+                    self.minimum_delay_between_paged_results_in_seconds + 11,
+                )
+            )
             ROOT_LOGGER.info(f"Sleeping {random_sleep_time} seconds until retrieving the next page of results...")
             time.sleep(random_sleep_time)
