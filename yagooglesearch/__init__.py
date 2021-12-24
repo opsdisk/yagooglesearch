@@ -376,7 +376,7 @@ class SearchClient:
             # notification string.
             if not self.yagooglesearch_manages_http_429s:
                 ROOT_LOGGER.info("Since yagooglesearch_manages_http_429s=False, yagooglesearch is done.")
-                return "HTTP_429_detected"
+                return "HTTP_429_DETECTED"
 
             ROOT_LOGGER.info(f"Sleeping for {self.http_429_cool_off_time_in_minutes} minutes...")
             time.sleep(self.http_429_cool_off_time_in_minutes * 60)
@@ -447,9 +447,12 @@ class SearchClient:
             # Request Google search results.
             html = self.get_page(url)
 
-            # HTTP 429 message returned from get_page() function, return to calling script.
-            if html == "HTTP_429_detected":
-                return "HTTP_429_detected"
+            # HTTP 429 message returned from get_page() function, add "HTTP_429_DETECTED" to the set and return to the
+            # calling script.
+            if html == "HTTP_429_DETECTED":
+                unique_urls_set.add("HTTP_429_DETECTED")
+                self.unique_urls_list = list(unique_urls_set)
+                return self.unique_urls_list
 
             # Create the BeautifulSoup object.
             soup = BeautifulSoup(html, "html.parser")

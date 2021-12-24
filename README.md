@@ -97,7 +97,40 @@ using it.
 
 If you do not want `yagooglesearch` to handle HTTP 429 cool off period and would rather handle it yourself, pass
 `yagooglesearch_manages_http_429s=False` when instantiating the yagooglesearch object.  If an HTTP 429 is detected, the
-string "HTTP_429_DETECTED" will be returned and it's up to you on what the next step should be.
+string "HTTP_429_DETECTED" is added to a list object that will be returned, and it's up to you on what the next step
+should be.  The list object will contain all the URLs found before the HTTP 429 was detected.
+
+```python
+import yagooglesearch
+
+query = "site:twitter.com"
+
+client = yagooglesearch.SearchClient(
+    query,
+    tbs="li:1",
+    verbosity=4,
+    num=10,
+    max_search_result_urls_to_return=1000,
+    minimum_delay_between_paged_results_in_seconds=1,
+    yagooglesearch_manages_http_429s=False,  # Add to manage HTTP 429s.
+)
+client.assign_random_user_agent()
+
+urls = client.search()
+
+if "HTTP_429_DETECTED" in urls:
+    print("HTTP 429 detected...it's up to you to modify your search.")
+
+    # Remove HTTP_429_DETECTED from list.
+    urls.remove("HTTP_429_DETECTED")
+
+    print("URLs found before HTTP 429 detected...")
+
+    for url in urls:
+        print(url)
+```
+
+![http429_detection_string_in_returned_list.png](img/http429_detection_string_in_returned_list.png)
 
 ## HTTP and SOCKS5 proxy support
 
