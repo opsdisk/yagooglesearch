@@ -63,6 +63,7 @@ client = yagooglesearch.SearchClient(
     http_429_cool_off_factor=1.5,
     proxy="socks5h://127.0.0.1:9050",
     verbosity=5,
+    output="complete"  # "normal" : Only url list // "complete" : List of {title, desc, url}
 )
 client.assign_random_user_agent()
 
