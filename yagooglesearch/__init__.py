@@ -84,6 +84,7 @@ class SearchClient:
         proxy="",
         verify_ssl=True,
         verbosity=5,
+        output="normal",
     ):
 
         """
@@ -112,6 +113,7 @@ class SearchClient:
         :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks. Defaults to True.
             This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
+        :param str output: "normal" (Only URLs) or "complete" (Title, Description and urls)
 
         :rtype: List of str
         :return: List of found URLs.
@@ -134,6 +136,7 @@ class SearchClient:
         self.proxy = proxy
         self.verify_ssl = verify_ssl
         self.verbosity = verbosity
+        self.output = output
 
         # Assign log level.
         ROOT_LOGGER.setLevel((6 - self.verbosity) * 10)
@@ -379,11 +382,12 @@ class SearchClient:
         """Start the Google search.
 
         :rtype: List of str
-        :return: List of URLs found
+        :return: List of URLs found or List of {"title", "desc", "url"}
         """
 
         # Set of URLs for the results found.
         unique_urls_set = set()
+        unique_complete_result = []
 
         # Count the number of valid, non-duplicate links found.
         total_valid_links_found = 0
@@ -461,6 +465,15 @@ class SearchClient:
                     ROOT_LOGGER.warning(f"No href for link: {link}")
                     continue
 
+                if (self.output == "complete"):
+                    # Get the first SPAN from the anchor tag.
+                    try:
+                        title = a.get_text()
+                        desc = a.parent.parent.contents[1].get_text()
+                    except KeyError:
+                        ROOT_LOGGER.warning(f"No title and desc for link")
+                        continue
+
                 # Filter invalid links and links pointing to Google itself.
                 link = self.filter_search_result_urls(link)
                 if not link:
@@ -476,11 +489,20 @@ class SearchClient:
                     ROOT_LOGGER.info(f"Found unique URL #{total_valid_links_found}: {link}")
                     unique_urls_set.add(link)
 
+                    if (self.output == "complete"):
+                        unique_complete_result.append({"title": title, 
+                                                    "desc": desc,
+                                                    "url": link})
+
+
                 # If we reached the limit of requested URLS, return with the results.
                 if self.max_search_result_urls_to_return <= len(unique_urls_set):
-                    # Convert to a list.
-                    self.unique_urls_list = list(unique_urls_set)
-                    return self.unique_urls_list
+                    if (self.output == "complete"):
+                        return unique_complete_result
+                    else:
+                        # Convert to a list.
+                        self.unique_urls_list = list(unique_urls_set)
+                        return self.unique_urls_list
 
             # See comment for the "valid_links_found_in_this_search" variable.  This is because determining if a "Next"
             # URL page of results is not straightforward.  For example, this can happen if
