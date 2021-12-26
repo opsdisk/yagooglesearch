@@ -469,9 +469,19 @@ class SearchClient:
                     # Get the first SPAN from the anchor tag.
                     try:
                         title = a.get_text()
-                        desc = a.parent.parent.contents[1].get_text()
-                    except KeyError:
+                    except Exception:
                         ROOT_LOGGER.warning(f"No title and desc for link")
+                        title = ''
+                        continue
+
+                    try:
+                        desc = a.parent.parent.contents[1].get_text()
+                        # Sometimes google returns different structures
+                        if (desc == ''):
+                            desc = a.parent.parent.contents[2].get_text()
+                    except Exception:
+                        ROOT_LOGGER.warning(f"No title and desc for link")
+                        desc = ''
                         continue
 
                 # Filter invalid links and links pointing to Google itself.
@@ -514,8 +524,12 @@ class SearchClient:
                     "any search results on the next page either.  Moving on..."
                 )
                 # Convert to a list.
-                self.unique_urls_list = list(unique_urls_set)
-                return self.unique_urls_list
+                if (self.output == "complete"):
+                    return unique_complete_result
+                else:
+                    # Convert to a list.
+                    self.unique_urls_list = list(unique_urls_set)
+                    return self.unique_urls_list
 
             # Bump the starting page URL parameter for the next request.
             self.start += self.num
