@@ -95,10 +95,10 @@ minutes and then try again.  Each time an HTTP 429 is detected, it increases the
 The goal is to have `yagooglesearch` worry about HTTP 429 detection and recovery and not put the burden on the script
 using it.
 
-If you do not want `yagooglesearch` to handle HTTP 429 cool off period and would rather handle it yourself, pass
+If you do not want `yagooglesearch` to handle HTTP 429s and would rather handle it yourself, pass
 `yagooglesearch_manages_http_429s=False` when instantiating the yagooglesearch object.  If an HTTP 429 is detected, the
 string "HTTP_429_DETECTED" is added to a list object that will be returned, and it's up to you on what the next step
-should be.  The list object will contain all the URLs found before the HTTP 429 was detected.
+should be.  The list object will contain any URLs found before the HTTP 429 was detected.
 
 ```python
 import yagooglesearch
