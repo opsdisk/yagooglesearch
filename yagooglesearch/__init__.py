@@ -497,7 +497,7 @@ class SearchClient:
                     unique_urls_set.add(link)
 
                 else:
-                    ROOT_LOGGER.warning(f"Duplicate URL found: {link}")
+                    ROOT_LOGGER.info(f"Duplicate URL found: {link}")
 
                 # If we reached the limit of requested URLS, return with the results.
                 if self.max_search_result_urls_to_return <= len(unique_urls_set):
