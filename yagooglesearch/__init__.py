@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -468,9 +468,7 @@ class SearchClient:
                     gbar.clear()
                 anchors = soup.find_all("a")
 
-            # Used to determine if another page of search results needs to be requested.  If 100 search results are
-            # requested per page, but the current page of results is less than that, no need to search the next page for
-            # results because there won't be any.  Prevents fruitless queries and costing a pointless search request.
+            # Tracks number of valid URLs found on a search page.
             valid_links_found_in_this_search = 0
 
             # Process every anchored URL.
@@ -498,21 +496,19 @@ class SearchClient:
                     ROOT_LOGGER.info(f"Found unique URL #{total_valid_links_found}: {link}")
                     unique_urls_set.add(link)
 
+                else:
+                    ROOT_LOGGER.warning(f"Duplicate URL found: {link}")
+
                 # If we reached the limit of requested URLS, return with the results.
                 if self.max_search_result_urls_to_return <= len(unique_urls_set):
                     # Convert to a list.
                     self.unique_urls_list = list(unique_urls_set)
                     return self.unique_urls_list
 
-            # See comment for the "valid_links_found_in_this_search" variable.  This is because determining if a "Next"
-            # URL page of results is not straightforward.  For example, this can happen if
-            # max_search_result_urls_to_return=100, but there are only 93 total possible results.
-            if valid_links_found_in_this_search != self.num:
-                ROOT_LOGGER.info(
-                    f"The number of valid search results ({valid_links_found_in_this_search}) was not the requested "
-                    f"max results to pull back at once num=({self.num}) for this page.  That implies there won't be "
-                    "any search results on the next page either.  Moving on..."
-                )
+            # Determining if a "Next" URL page of results is not straightforward.  If no valid links are found, the
+            # search results have been exhausted.
+            if valid_links_found_in_this_search == 0:
+                ROOT_LOGGER.info("No valid search results found on this page.  Moving on...")
                 # Convert to a list.
                 self.unique_urls_list = list(unique_urls_set)
                 return self.unique_urls_list
