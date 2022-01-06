@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -85,7 +85,7 @@ class SearchClient:
         proxy="",
         verify_ssl=True,
         verbosity=5,
-        output="normal",
+        verbose_output=False,
     ):
 
         """
@@ -117,10 +117,10 @@ class SearchClient:
         :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks.  Defaults to True.
             This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
-        :param str output: "normal" (Only URLs) or "complete" (Title, Description and urls)
+        :param bool verbose_output: False (only URLs) or True (rank, title, description, and URL).  Defaults to False.
 
         :rtype: List of str
-        :return: List of found URLs.
+        :return: List of URLs found or list of {"rank", "title", "description", "url"}
         """
 
         self.query = urllib.parse.quote_plus(query)
@@ -141,7 +141,7 @@ class SearchClient:
         self.proxy = proxy
         self.verify_ssl = verify_ssl
         self.verbosity = verbosity
-        self.output = output
+        self.verbose_output = verbose_output
 
         # Assign log level.
         ROOT_LOGGER.setLevel((6 - self.verbosity) * 10)
@@ -397,12 +397,11 @@ class SearchClient:
         """Start the Google search.
 
         :rtype: List of str
-        :return: List of URLs found or List of {"title", "desc", "url"}
+        :return: List of URLs found or list of {"rank", "title", "description", "url"}
         """
 
-        # Set of URLs for the results found.
-        unique_urls_set = set()
-        unique_complete_result = []
+        # Consolidate search results.
+        self.search_result_list = []
 
         # Count the number of valid, non-duplicate links found.
         total_valid_links_found = 0
@@ -454,9 +453,8 @@ class SearchClient:
             # HTTP 429 message returned from get_page() function, add "HTTP_429_DETECTED" to the set and return to the
             # calling script.
             if html == "HTTP_429_DETECTED":
-                unique_urls_set.add("HTTP_429_DETECTED")
-                self.unique_urls_list = list(unique_urls_set)
-                return self.unique_urls_list
+                self.search_result_list.append("HTTP_429_DETECTED")
+                return self.search_result_list
 
             # Create the BeautifulSoup object.
             soup = BeautifulSoup(html, "html.parser")
@@ -485,68 +483,65 @@ class SearchClient:
                     ROOT_LOGGER.warning(f"No href for link: {link}")
                     continue
 
-                if (self.output == "complete"):
-                    # Get the first SPAN from the anchor tag.
-                    try:
-                        title = a.get_text()
-                    except Exception:
-                        ROOT_LOGGER.warning(f"No title and desc for link")
-                        title = ''
-                        continue
-
-                    try:
-                        desc = a.parent.parent.contents[1].get_text()
-                        # Sometimes google returns different structures
-                        if (desc == ''):
-                            desc = a.parent.parent.contents[2].get_text()
-                    except Exception:
-                        ROOT_LOGGER.warning(f"No title and desc for link")
-                        desc = ''
-                        continue
-
                 # Filter invalid links and links pointing to Google itself.
                 link = self.filter_search_result_urls(link)
                 if not link:
                     continue
 
+                if self.verbose_output:
+
+                    # Extract the URL title.
+                    try:
+                        title = a.get_text()
+                    except Exception:
+                        ROOT_LOGGER.warning(f"No title for link: {link}")
+                        title = ""
+
+                    # Extract the URL description.
+                    try:
+                        description = a.parent.parent.contents[1].get_text()
+
+                        # Sometimes Google returns different structures.
+                        if description == "":
+                            description = a.parent.parent.contents[2].get_text()
+
+                    except Exception:
+                        ROOT_LOGGER.warning(f"No description for link: {link}")
+                        description = ""
+
                 # Check if URL has already been found.
-                if link not in unique_urls_set:
+                if link not in self.search_result_list:
 
                     # Increase the counters.
                     valid_links_found_in_this_search += 1
                     total_valid_links_found += 1
 
                     ROOT_LOGGER.info(f"Found unique URL #{total_valid_links_found}: {link}")
-                    unique_urls_set.add(link)
 
-                    if (self.output == "complete"):
-                        unique_complete_result.append({"title": title, 
-                                                    "desc": desc,
-                                                    "url": link})
+                    if self.verbose_output:
+                        self.search_result_list.append(
+                            {
+                                "rank": total_valid_links_found,  # Approximate rank according to yagooglesearch.
+                                "title": title.strip(),  # Remove leading and trailing spaces.
+                                "description": description.strip(),  # Remove leading and trailing spaces.
+                                "url": link,
+                            }
+                        )
+                    else:
+                        self.search_result_list.append(link)
 
                 else:
                     ROOT_LOGGER.info(f"Duplicate URL found: {link}")
 
                 # If we reached the limit of requested URLS, return with the results.
-                if self.max_search_result_urls_to_return <= len(unique_urls_set):
-                    if (self.output == "complete"):
-                        return unique_complete_result
-                    else:
-                        # Convert to a list.
-                        self.unique_urls_list = list(unique_urls_set)
-                        return self.unique_urls_list
+                if self.max_search_result_urls_to_return <= len(self.search_result_list):
+                    return self.search_result_list
 
             # Determining if a "Next" URL page of results is not straightforward.  If no valid links are found, the
             # search results have been exhausted.
             if valid_links_found_in_this_search == 0:
                 ROOT_LOGGER.info("No valid search results found on this page.  Moving on...")
-                # Convert to a list.
-                if (self.output == "complete"):
-                    return unique_complete_result
-                else:
-                    # Convert to a list.
-                    self.unique_urls_list = list(unique_urls_set)
-                    return self.unique_urls_list
+                return self.search_result_list
 
             # Bump the starting page URL parameter for the next request.
             self.start += self.num
