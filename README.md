@@ -78,16 +78,16 @@ for url in urls:
 ## Google is blocking me!
 
 Low and slow is the strategy when executing Google searches using `yagooglesearch`.  If you start getting HTTP 429
-responses, Google has rightfully detected you as a bot and will block your IP for a set period of time.
-`yagooglesearch` is not able to bypass CAPTCHA, but you can do this manually by performing a Google search from a
-browser and proving you are a human.
+responses, Google has rightfully detected you as a bot and will block your IP for a set period of time. `yagooglesearch`
+is not able to bypass CAPTCHA, but you can do this manually by performing a Google search from a browser and proving you
+are a human.
 
 The criteria and thresholds to getting blocked is unknown, but in general, randomizing the user agent, waiting enough
-time between paged search results (7-17 seconds), and waiting enough time between different Google searches
-(30-60 seconds) should suffice.  Your mileage will definitely vary though.  Using this library with Tor will likely get
-you blocked quickly.
+time between paged search results (7-17 seconds), and waiting enough time between different Google searches (30-60
+seconds) should suffice.  Your mileage will definitely vary though.  Using this library with Tor will likely get you
+blocked quickly.
 
-## HTTP 429 detection and recovery
+## HTTP 429 detection and recovery (optional)
 
 If `yagooglesearch` detects an HTTP 429 response from Google, it will sleep for `http_429_cool_off_time_in_minutes`
 minutes and then try again.  Each time an HTTP 429 is detected, it increases the wait time by a factor of
@@ -95,6 +95,43 @@ minutes and then try again.  Each time an HTTP 429 is detected, it increases the
 
 The goal is to have `yagooglesearch` worry about HTTP 429 detection and recovery and not put the burden on the script
 using it.
+
+If you do not want `yagooglesearch` to handle HTTP 429s and would rather handle it yourself, pass
+`yagooglesearch_manages_http_429s=False` when instantiating the yagooglesearch object.  If an HTTP 429 is detected, the
+string "HTTP_429_DETECTED" is added to a list object that will be returned, and it's up to you on what the next step
+should be.  The list object will contain any URLs found before the HTTP 429 was detected.
+
+```python
+import yagooglesearch
+
+query = "site:twitter.com"
+
+client = yagooglesearch.SearchClient(
+    query,
+    tbs="li:1",
+    verbosity=4,
+    num=10,
+    max_search_result_urls_to_return=1000,
+    minimum_delay_between_paged_results_in_seconds=1,
+    yagooglesearch_manages_http_429s=False,  # Add to manage HTTP 429s.
+)
+client.assign_random_user_agent()
+
+urls = client.search()
+
+if "HTTP_429_DETECTED" in urls:
+    print("HTTP 429 detected...it's up to you to modify your search.")
+
+    # Remove HTTP_429_DETECTED from list.
+    urls.remove("HTTP_429_DETECTED")
+
+    print("URLs found before HTTP 429 detected...")
+
+    for url in urls:
+        print(url)
+```
+
+![http429_detection_string_in_returned_list.png](img/http429_detection_string_in_returned_list.png)
 
 ## HTTP and SOCKS5 proxy support
 
@@ -120,10 +157,10 @@ Supported proxy schemes are based off those supported in the Python `requests` l
 
 * `http`
 * `https`
-* `socks5` - "causes the DNS resolution to happen on the client, rather than on the proxy server."  You likely
-  **do not** want this since all DNS lookups would source from where `yagooglesearch` is being run instead of the proxy.
-* `socks5h` - "If you want to resolve the domains on the proxy server, use socks5h as the scheme."  This is the
-  **best**  option if you are using SOCKS because the DNS lookup and Google search is sourced from the proxy IP address.
+* `socks5` - "causes the DNS resolution to happen on the client, rather than on the proxy server."  You likely **do
+  not** want this since all DNS lookups would source from where `yagooglesearch` is being run instead of the proxy.
+* `socks5h` - "If you want to resolve the domains on the proxy server, use socks5h as the scheme."  This is the **best**
+  option if you are using SOCKS because the DNS lookup and Google search is sourced from the proxy IP address.
 
 ## HTTPS proxies and SSL/TLS certificates
 
@@ -233,8 +270,8 @@ The `&tbs=` parameter is used to specify either verbatim or time-based filters.
 ## Limitations
 
 Currently, the `.filter_search_result_urls()` function will remove any url with the word "google" in it.  This is to
-prevent the returned search URLs from being polluted with Google URLs.  Note this if you are trying to explicitly
-search for results that may have "google" in the URL, such as `site:google.com computer`
+prevent the returned search URLs from being polluted with Google URLs.  Note this if you are trying to explicitly search
+for results that may have "google" in the URL, such as `site:google.com computer`
 
 ## License
 
@@ -249,4 +286,4 @@ Project Link: [https://github.com/opsdisk/yagooglesearch](https://github.com/ops
 ## Acknowledgements
 
 * [Mario Vilas](https://github.com/MarioVilas) for his amazing work on the original
-[googlesearch](https://github.com/MarioVilas/googlesearch) library.
+  [googlesearch](https://github.com/MarioVilas/googlesearch) library.

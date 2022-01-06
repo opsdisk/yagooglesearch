@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.2.0"
+__version__ = "1.5.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -77,8 +77,9 @@ class SearchClient:
         country="",
         extra_params=None,
         max_search_result_urls_to_return=100,
-        delay_between_paged_results_in_seconds=list(range(7, 18)),
+        minimum_delay_between_paged_results_in_seconds=7,
         user_agent=None,
+        yagooglesearch_manages_http_429s=True,
         http_429_cool_off_time_in_minutes=60,
         http_429_cool_off_factor=1.1,
         proxy="",
@@ -89,7 +90,7 @@ class SearchClient:
 
         """
         SearchClient
-        :param str query: Query string. Must NOT be url-encoded.
+        :param str query: Query string.  Must NOT be url-encoded.
         :param str tld: Top level domain.
         :param str lang: Language.
         :param str tbs: Verbatim search or time limits (e.g., "qdr:h" => last hour, "qdr:d" => last 24 hours, "qdr:m"
@@ -97,20 +98,23 @@ class SearchClient:
         :param str safe: Safe search.
         :param int start: First page of results to retrieve.
         :param int num: Max number of results to pull back per page.  Capped at 100 by Google.
-        :param str country: Country or region to focus the search on. Similar to changing the TLD, but does not yield
+        :param str country: Country or region to focus the search on.  Similar to changing the TLD, but does not yield
             exactly the same results.  Only Google knows why...
-        :param dict extra_params: A dictionary of extra HTTP GET parameters, which must be URL encoded. For example if
+        :param dict extra_params: A dictionary of extra HTTP GET parameters, which must be URL encoded.  For example if
             you don't want Google to filter similar results you can set the extra_params to {'filter': '0'} which will
             append '&filter=0' to every query.
         :param int max_search_result_urls_to_return: Max URLs to return for the entire Google search.
-        :param int delay_between_paged_results_in_seconds: Time to wait between HTTP requests for consecutive pages for
-            the same search query.
+        :param int minimum_delay_between_paged_results_in_seconds: Minimum time to wait between HTTP requests for
+            consecutive pages for the same search query.  The actual time will be a random value between this minimum
+            value and value + 11 to make it look more human.
         :param str user_agent: Hard-coded user agent for the HTTP requests.
+        :param bool yagooglesearch_manages_http_429s: Determines if yagooglesearch will handle HTTP 429 cool off and
+           retries.  Disable if you want to manage HTTP 429 responses.
         :param int http_429_cool_off_time_in_minutes: Minutes to sleep if an HTTP 429 is detected.
         :param float http_429_cool_off_factor: Factor to multiply by http_429_cool_off_time_in_minutes for each HTTP 429
             detected.
         :param str proxy: HTTP(S) or SOCKS5 proxy to use.
-        :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks. Defaults to True.
+        :param bool verify_ssl: Verify the SSL certificate to prevent traffic interception attacks.  Defaults to True.
             This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
         :param str output: "normal" (Only URLs) or "complete" (Title, Description and urls)
@@ -129,8 +133,9 @@ class SearchClient:
         self.country = country
         self.extra_params = extra_params
         self.max_search_result_urls_to_return = max_search_result_urls_to_return
-        self.delay_between_paged_results_in_seconds = delay_between_paged_results_in_seconds
+        self.minimum_delay_between_paged_results_in_seconds = minimum_delay_between_paged_results_in_seconds
         self.user_agent = user_agent
+        self.yagooglesearch_manages_http_429s = yagooglesearch_manages_http_429s
         self.http_429_cool_off_time_in_minutes = http_429_cool_off_time_in_minutes
         self.http_429_cool_off_factor = http_429_cool_off_factor
         self.proxy = proxy
@@ -365,14 +370,24 @@ class SearchClient:
 
         if http_response_code == 200:
             html = response.text
+
         elif http_response_code == 429:
+
             ROOT_LOGGER.warning("Google is blocking your IP for making too many requests in a specific time period.")
+
+            # Calling script does not want yagooglesearch to handle HTTP 429 cool off and retry.  Just return a
+            # notification string.
+            if not self.yagooglesearch_manages_http_429s:
+                ROOT_LOGGER.info("Since yagooglesearch_manages_http_429s=False, yagooglesearch is done.")
+                return "HTTP_429_DETECTED"
+
             ROOT_LOGGER.info(f"Sleeping for {self.http_429_cool_off_time_in_minutes} minutes...")
             time.sleep(self.http_429_cool_off_time_in_minutes * 60)
             self.http_429_detected()
 
             # Try making the request again.
             html = self.get_page(url)
+
         else:
             ROOT_LOGGER.warning(f"HTML response code: {http_response_code}")
 
@@ -436,6 +451,13 @@ class SearchClient:
             # Request Google search results.
             html = self.get_page(url)
 
+            # HTTP 429 message returned from get_page() function, add "HTTP_429_DETECTED" to the set and return to the
+            # calling script.
+            if html == "HTTP_429_DETECTED":
+                unique_urls_set.add("HTTP_429_DETECTED")
+                self.unique_urls_list = list(unique_urls_set)
+                return self.unique_urls_list
+
             # Create the BeautifulSoup object.
             soup = BeautifulSoup(html, "html.parser")
 
@@ -450,9 +472,7 @@ class SearchClient:
                     gbar.clear()
                 anchors = soup.find_all("a")
 
-            # Used to determine if another page of search results needs to be requested.  If 100 search results are
-            # requested per page, but the current page of results is less than that, no need to search the next page for
-            # results because there won't be any.  Prevents fruitless queries and costing a pointless search request.
+            # Tracks number of valid URLs found on a search page.
             valid_links_found_in_this_search = 0
 
             # Process every anchored URL.
@@ -504,6 +524,8 @@ class SearchClient:
                                                     "desc": desc,
                                                     "url": link})
 
+                else:
+                    ROOT_LOGGER.info(f"Duplicate URL found: {link}")
 
                 # If we reached the limit of requested URLS, return with the results.
                 if self.max_search_result_urls_to_return <= len(unique_urls_set):
@@ -514,15 +536,10 @@ class SearchClient:
                         self.unique_urls_list = list(unique_urls_set)
                         return self.unique_urls_list
 
-            # See comment for the "valid_links_found_in_this_search" variable.  This is because determining if a "Next"
-            # URL page of results is not straightforward.  For example, this can happen if
-            # max_search_result_urls_to_return=100, but there are only 93 total possible results.
-            if valid_links_found_in_this_search != self.num:
-                ROOT_LOGGER.info(
-                    f"The number of valid search results ({valid_links_found_in_this_search}) was not the requested "
-                    f"max results to pull back at once num=({self.num}) for this page.  That implies there won't be "
-                    "any search results on the next page either.  Moving on..."
-                )
+            # Determining if a "Next" URL page of results is not straightforward.  If no valid links are found, the
+            # search results have been exhausted.
+            if valid_links_found_in_this_search == 0:
+                ROOT_LOGGER.info("No valid search results found on this page.  Moving on...")
                 # Convert to a list.
                 if (self.output == "complete"):
                     return unique_complete_result
@@ -545,6 +562,11 @@ class SearchClient:
                 url = self.url_next_page_num
 
             # Randomize sleep time between paged requests to make it look more human.
-            random_sleep_time = random.choice(self.delay_between_paged_results_in_seconds)
+            random_sleep_time = random.choice(
+                range(
+                    self.minimum_delay_between_paged_results_in_seconds,
+                    self.minimum_delay_between_paged_results_in_seconds + 11,
+                )
+            )
             ROOT_LOGGER.info(f"Sleeping {random_sleep_time} seconds until retrieving the next page of results...")
             time.sleep(random_sleep_time)
