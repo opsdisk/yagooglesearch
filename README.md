@@ -61,7 +61,7 @@ client = yagooglesearch.SearchClient(
     max_search_result_urls_to_return=100,
     http_429_cool_off_time_in_minutes=45,
     http_429_cool_off_factor=1.5,
-    proxy="socks5h://127.0.0.1:9050",
+    # proxy="socks5h://127.0.0.1:9050",
     verbosity=5,
     verbose_output=True,  # False (only URLs) or True (rank, title, description, and URL)
 )
@@ -287,3 +287,7 @@ Project Link: [https://github.com/opsdisk/yagooglesearch](https://github.com/ops
 
 * [Mario Vilas](https://github.com/MarioVilas) for his amazing work on the original
   [googlesearch](https://github.com/MarioVilas/googlesearch) library.
+
+## Contributors
+
+* [KennBro](https://github.com/KennBro) - <https://github.com/opsdisk/yagooglesearch/pull/9>
