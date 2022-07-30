@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -32,8 +32,8 @@ ROOT_LOGGER.addHandler(console_handler)
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36"
 
 # Load the list of valid user agents from the install folder.  The search order is:
-#   1) user_agents.txt
-#   2) default USER_AGENT
+# 1) user_agents.txt
+# 2) default USER_AGENT
 install_folder = os.path.abspath(os.path.split(__file__)[0])
 
 try:
@@ -155,7 +155,16 @@ class SearchClient:
         self.cookies = None
 
         # Used later to ensure there are not any URL parameter collisions.
-        self.url_parameters = ("btnG", "cr", "hl", "num", "q", "safe", "start", "tbs")
+        self.url_parameters = (
+            "btnG",
+            "cr",
+            "hl",
+            "num",
+            "q",
+            "safe",
+            "start",
+            "tbs",
+        )
 
         # Default user agent, unless instructed by the user to change it.
         if not user_agent:
@@ -272,7 +281,7 @@ class SearchClient:
                 )
                 link = None
 
-            # TODO: Generates false positives if specifing an actual Google site, e.g. "site:google.com fiber".
+            # TODO: Generates false positives if specifying an actual Google site, e.g. "site:google.com fiber".
             if urlparse_object.netloc and ("google" in urlparse_object.netloc.lower()):
                 ROOT_LOGGER.debug(f'Excluding URL because it contains "google": {link}')
                 link = None
@@ -338,7 +347,7 @@ class SearchClient:
                     "vary, but I'll try and work around this by updating the cookie."
                 )
 
-                # Convert the cookiejar data struture to a Python dict.
+                # Convert the cookiejar data structure to a Python dict.
                 cookie_dict = requests.utils.dict_from_cookiejar(self.cookies)
 
                 # Pull out the random number assigned to the response cookie.
@@ -346,7 +355,7 @@ class SearchClient:
 
                 # See https://github.com/benbusby/whoogle-search/pull/320/files
                 """
-                Attempting to disect/breakdown the new cookie response values.
+                Attempting to dissect/breakdown the new cookie response values.
 
                 YES - Accept consent
                 shp - ?
@@ -416,7 +425,7 @@ class SearchClient:
             if builtin_param in self.extra_params.keys():
                 raise ValueError(f'GET parameter "{builtin_param}" is overlapping with the built-in GET parameter')
 
-        # Simulates browsing to the google.com home page and retrieving the initial cookie.
+        # Simulates browsing to the https://www.google.com home page and retrieving the initial cookie.
         html = self.get_page(self.url_home)
 
         # Loop until we reach the maximum result results found or there are no more search results found to reach
@@ -533,7 +542,7 @@ class SearchClient:
                 else:
                     ROOT_LOGGER.info(f"Duplicate URL found: {link}")
 
-                # If we reached the limit of requested URLS, return with the results.
+                # If we reached the limit of requested URLs, return with the results.
                 if self.max_search_result_urls_to_return <= len(self.search_result_list):
                     return self.search_result_list
 
