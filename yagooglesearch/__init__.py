@@ -86,6 +86,7 @@ class SearchClient:
         verify_ssl=True,
         verbosity=5,
         verbose_output=False,
+        google_exemption=None
     ):
 
         """
@@ -118,7 +119,8 @@ class SearchClient:
             This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
         :param bool verbose_output: False (only URLs) or True (rank, title, description, and URL).  Defaults to False.
-
+        :param str google_exemption: Google cookie exemption string.  This is a string that Google uses to allow certain google searches. Defaults to None
+        
         :rtype: List of str
         :return: List of URLs found or list of {"rank", "title", "description", "url"}
         """
@@ -142,6 +144,7 @@ class SearchClient:
         self.verify_ssl = verify_ssl
         self.verbosity = verbosity
         self.verbose_output = verbose_output
+        self.google_exemption = google_exemption
 
         # Assign log level.
         ROOT_LOGGER.setLevel((6 - self.verbosity) * 10)
@@ -152,7 +155,10 @@ class SearchClient:
             self.num = 100
 
         # Initialize cookies to None, will be updated with each request in get_page().
-        self.cookies = None
+        if self.google_exemption:
+            self.cookies = {'GOOGLE_ABUSE_EXEMPTION': self.google_exemption}
+        else:
+            self.cookies = None
 
         # Used later to ensure there are not any URL parameter collisions.
         self.url_parameters = (
