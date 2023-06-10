@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.6.1"
+__version__ = "1.7.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -86,9 +86,8 @@ class SearchClient:
         verify_ssl=True,
         verbosity=5,
         verbose_output=False,
-        google_exemption=None
+        google_exemption=None,
     ):
-
         """
         SearchClient
         :param str query: Query string.  Must NOT be url-encoded.
@@ -119,8 +118,9 @@ class SearchClient:
             This may need to be disabled in some HTTPS proxy instances.
         :param int verbosity: Logging and console output verbosity.
         :param bool verbose_output: False (only URLs) or True (rank, title, description, and URL).  Defaults to False.
-        :param str google_exemption: Google cookie exemption string.  This is a string that Google uses to allow certain google searches. Defaults to None
-        
+        :param str google_exemption: Google cookie exemption string.  This is a string that Google uses to allow certain
+            google searches. Defaults to None.
+
         :rtype: List of str
         :return: List of URLs found or list of {"rank", "title", "description", "url"}
         """
@@ -154,9 +154,10 @@ class SearchClient:
             ROOT_LOGGER.warning("The largest value allowed by Google for num is 100.  Setting num to 100.")
             self.num = 100
 
-        # Initialize cookies to None, will be updated with each request in get_page().
+        # Populate cookies with GOOGLE_ABUSE_EXEMPTION if it is provided.  Otherwise, initialize cookies to None.
+        # It will be updated with each request in get_page().
         if self.google_exemption:
-            self.cookies = {'GOOGLE_ABUSE_EXEMPTION': self.google_exemption}
+            self.cookies = {"GOOGLE_ABUSE_EXEMPTION": self.google_exemption}
         else:
             self.cookies = None
 
@@ -184,7 +185,6 @@ class SearchClient:
 
         # Update proxy_dict if a proxy is provided.
         if proxy:
-
             # Standardize case since the scheme will be checked against a hard-coded list.
             self.proxy = proxy.lower()
 
@@ -327,7 +327,12 @@ class SearchClient:
 
         ROOT_LOGGER.info(f"Requesting URL: {url}")
         response = requests.get(
-            url, proxies=self.proxy_dict, headers=headers, cookies=self.cookies, timeout=15, verify=self.verify_ssl
+            url,
+            proxies=self.proxy_dict,
+            headers=headers,
+            cookies=self.cookies,
+            timeout=15,
+            verify=self.verify_ssl,
         )
 
         # Update the cookies.
@@ -347,7 +352,6 @@ class SearchClient:
         # See https://github.com/benbusby/whoogle-search/issues/311
         try:
             if response.cookies["CONSENT"].startswith("PENDING+"):
-
                 ROOT_LOGGER.warning(
                     "Looks like your IP address is sourcing from a European Union location...your search results may "
                     "vary, but I'll try and work around this by updating the cookie."
@@ -387,7 +391,6 @@ class SearchClient:
             html = response.text
 
         elif http_response_code == 429:
-
             ROOT_LOGGER.warning("Google is blocking your IP for making too many requests in a specific time period.")
 
             # Calling script does not want yagooglesearch to handle HTTP 429 cool off and retry.  Just return a
@@ -437,7 +440,6 @@ class SearchClient:
         # Loop until we reach the maximum result results found or there are no more search results found to reach
         # max_search_result_urls_to_return.
         while total_valid_links_found <= self.max_search_result_urls_to_return:
-
             ROOT_LOGGER.info(
                 f"Stats: start={self.start}, num={self.num}, total_valid_links_found={total_valid_links_found} / "
                 f"max_search_result_urls_to_return={self.max_search_result_urls_to_return}"
@@ -490,7 +492,6 @@ class SearchClient:
 
             # Process every anchored URL.
             for a in anchors:
-
                 # Get the URL from the anchor tag.
                 try:
                     link = a["href"]
@@ -504,7 +505,6 @@ class SearchClient:
                     continue
 
                 if self.verbose_output:
-
                     # Extract the URL title.
                     try:
                         title = a.get_text()
@@ -526,7 +526,6 @@ class SearchClient:
 
                 # Check if URL has already been found.
                 if link not in self.search_result_list:
-
                     # Increase the counters.
                     valid_links_found_in_this_search += 1
                     total_valid_links_found += 1

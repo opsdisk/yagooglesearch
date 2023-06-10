@@ -242,6 +242,11 @@ for search_query in search_queries:
     proxy_rotation_index += 1
 ```
 
+## GOOGLE_ABUSE_EXEMPTION cookie
+
+If you have a `GOOGLE_ABUSE_EXEMPTION` cookie value, it can be passed into `google_exemption` when instantiating the
+`SearchClient` object.
+
 ## &tbs= URL filter clarification
 
 The `&tbs=` parameter is used to specify either verbatim or time-based filters.
@@ -291,3 +296,4 @@ Project Link: [https://github.com/opsdisk/yagooglesearch](https://github.com/ops
 ## Contributors
 
 * [KennBro](https://github.com/KennBro) - <https://github.com/opsdisk/yagooglesearch/pull/9>
+* [ArshansGithub](https://github.com/ArshansGithub) - <https://github.com/opsdisk/yagooglesearch/pull/21>
