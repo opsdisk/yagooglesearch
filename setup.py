@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yagooglesearch",
-    version="1.6.1",
+    version="1.7.0",
     author="Brennon Thomas",
     author_email="info@opsdisk.com",
     description="A Python library for executing intelligent, realistic-looking, and tunable Google searches.",
@@ -16,7 +16,7 @@ setuptools.setup(
     package_data={"yagooglesearch": ["user_agents.txt"]},
     install_requires=[
         "beautifulsoup4>=4.9.3",
-        "requests>=2.26.0",
+        "requests>=2.31.0",
         "requests[socks]",
     ],
     python_requires=">=3.6",
