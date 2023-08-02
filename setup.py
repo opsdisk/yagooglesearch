@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="yagooglesearch",
-    version="1.7.0",
+    version="1.8.0",
     author="Brennon Thomas",
     author_email="info@opsdisk.com",
     description="A Python library for executing intelligent, realistic-looking, and tunable Google searches.",

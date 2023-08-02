@@ -12,7 +12,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -38,11 +38,23 @@ install_folder = os.path.abspath(os.path.split(__file__)[0])
 
 try:
     user_agents_file = os.path.join(install_folder, "user_agents.txt")
-    with open(user_agents_file) as fh:
+    with open(user_agents_file, "r") as fh:
         user_agents_list = [_.strip() for _ in fh.readlines()]
 
 except Exception:
     user_agents_list = [USER_AGENT]
+
+
+# Load the list of result languages.  Compiled by viewing the source code at https://www.google.com/advanced_search for
+# the supported languages.
+try:
+    result_languages_file = os.path.join(install_folder, "result_languages.txt")
+    with open(result_languages_file, "r") as fh:
+        result_languages_list = [_.strip().split("=")[0] for _ in fh.readlines()]
+
+except Exception as e:
+    print(f"There was an issue loading the result languages file.  Exception: {e}")
+    result_languages_list = []
 
 
 def get_tbs(from_date, to_date):
@@ -69,7 +81,8 @@ class SearchClient:
         self,
         query,
         tld="com",
-        lang="en",
+        lang_html_ui="en",
+        lang_result="lang_en",
         tbs="0",
         safe="off",
         start=0,
@@ -92,7 +105,8 @@ class SearchClient:
         SearchClient
         :param str query: Query string.  Must NOT be url-encoded.
         :param str tld: Top level domain.
-        :param str lang: Language.
+        :param str lang_html_ui: HTML User Interface language.
+        :param str lang_result: Search result language.
         :param str tbs: Verbatim search or time limits (e.g., "qdr:h" => last hour, "qdr:d" => last 24 hours, "qdr:m"
             => last month).
         :param str safe: Safe search.
@@ -127,7 +141,8 @@ class SearchClient:
 
         self.query = urllib.parse.quote_plus(query)
         self.tld = tld
-        self.lang = lang
+        self.lang_html_ui = lang_html_ui
+        self.lang_result = lang_result.lower()
         self.tbs = tbs
         self.safe = safe
         self.start = start
@@ -150,6 +165,13 @@ class SearchClient:
         ROOT_LOGGER.setLevel((6 - self.verbosity) * 10)
 
         # Argument checks.
+        if self.lang_result not in result_languages_list:
+            ROOT_LOGGER.error(
+                f"{self.lang_result} is not a valid language result.  See {result_languages_file} for the list of valid "
+                'languages.  Setting lang_result to "lang_en".'
+            )
+            self.lang_result = "lang_en"
+
         if self.num > 100:
             ROOT_LOGGER.warning("The largest value allowed by Google for num is 100.  Setting num to 100.")
             self.num = 100
@@ -171,6 +193,7 @@ class SearchClient:
             "safe",
             "start",
             "tbs",
+            "lr",
         )
 
         # Default user agent, unless instructed by the user to change it.
@@ -215,28 +238,28 @@ class SearchClient:
 
         # First search requesting the default 10 search results.
         self.url_search = (
-            f"https://www.google.{self.tld}/search?hl={self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang_html_ui}&lr={self.lang_result}&"
             f"q={self.query}&btnG=Google+Search&tbs={self.tbs}&safe={self.safe}&"
             f"cr={self.country}&filter=0"
         )
 
         # Subsequent searches starting at &start= and retrieving 10 search results at a time.
         self.url_next_page = (
-            f"https://www.google.{self.tld}/search?hl={self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang_html_ui}&lr={self.lang_result}&"
             f"q={self.query}&start={self.start}&tbs={self.tbs}&safe={self.safe}&"
             f"cr={self.country}&filter=0"
         )
 
         # First search requesting more than the default 10 search results.
         self.url_search_num = (
-            f"https://www.google.{self.tld}/search?hl={self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang_html_ui}&lr={self.lang_result}&"
             f"q={self.query}&num={self.num}&btnG=Google+Search&tbs={self.tbs}&"
             f"safe={self.safe}&cr={self.country}&filter=0"
         )
 
         # Subsequent searches starting at &start= and retrieving &num= search results at a time.
         self.url_next_page_num = (
-            f"https://www.google.{self.tld}/search?hl={self.lang}&"
+            f"https://www.google.{self.tld}/search?hl={self.lang_html_ui}&lr={self.lang_result}&"
             f"q={self.query}&start={self.start}&num={self.num}&tbs={self.tbs}&"
             f"safe={self.safe}&cr={self.country}&filter=0"
         )
@@ -458,10 +481,8 @@ class SearchClient:
                     url = self.url_search_num
 
             # Append extra GET parameters to the URL.  This is done on every iteration because we're rebuilding the
-            # entire URL at the end of this loop.
+            # entire URL at the end of this loop.  The keys and values are not URL encoded.
             for key, value in self.extra_params.items():
-                key = urllib.parse.quote_plus(key)
-                value = urllib.parse.quote_plus(value)
                 url += f"&{key}={value}"
 
             # Request Google search results.
