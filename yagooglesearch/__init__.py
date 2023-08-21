@@ -2,7 +2,6 @@
 import logging
 import os
 import random
-import sys
 import time
 import urllib
 
@@ -12,7 +11,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.8.0"
+__version__ = "1.8.1"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -208,19 +207,6 @@ class SearchClient:
 
         # Update proxy_dict if a proxy is provided.
         if proxy:
-            # Standardize case since the scheme will be checked against a hard-coded list.
-            self.proxy = proxy.lower()
-
-            urllib_object = urllib.parse.urlparse(self.proxy)
-            scheme = urllib_object.scheme
-
-            if scheme not in ["http", "https", "socks5", "socks5h"]:
-                ROOT_LOGGER.error(
-                    f'The provided proxy scheme ("{scheme}") is not valid and must be either "http", "https", "socks5"'
-                    ', or "socks5h"'
-                )
-                sys.exit(1)
-
             self.proxy_dict = {
                 "http": self.proxy,
                 "https": self.proxy,
