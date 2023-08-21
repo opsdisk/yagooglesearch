@@ -207,17 +207,6 @@ class SearchClient:
 
         # Update proxy_dict if a proxy is provided.
         if proxy:
-            urllib_object = urllib.parse.urlparse(self.proxy)
-            # Standardize case since the scheme will be checked against a hard-coded list.
-            scheme = urllib_object.scheme.lower()
-
-            if scheme not in ["http", "https", "socks5", "socks5h"]:
-                ROOT_LOGGER.error(
-                    f'The provided proxy scheme "{scheme}" is not valid and must be either "http", "https", "socks5"'
-                    ', or "socks5h"'
-                )
-                return []
-
             self.proxy_dict = {
                 "http": self.proxy,
                 "https": self.proxy,
