@@ -11,7 +11,7 @@ import requests
 
 # Custom Python libraries.
 
-__version__ = "1.8.1"
+__version__ = "1.8.2"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
