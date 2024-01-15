@@ -38,14 +38,14 @@ Google's preferred method is to use their [API](https://developers.google.com/cu
 pip install yagooglesearch
 ```
 
-## <span>setup.py</span>
+## pyproject.toml
 
 ```bash
 git clone https://github.com/opsdisk/yagooglesearch
 cd yagooglesearch
-virtualenv -p python3.7 .venv  # If using a virtual environment.
+virtualenv -p python3 .venv  # If using a virtual environment.
 source .venv/bin/activate  # If using a virtual environment.
-python setup.py install
+pip install .  # Reads from pyproject.toml
 ```
 
 ## Usage
@@ -74,6 +74,13 @@ len(urls)
 for url in urls:
     print(url)
 ```
+
+## Max ~400 results returned
+
+Even though searching Google through the GUI will display a message like "About 13,000,000 results", that does not mean
+yagooglesearch will find anything close to that.  Testing shows that at most, about 400 results are returned.  If you
+set 400 < `max_search_result_urls_to_return`, a warning message will be printed to the logs.  See
+<https://github.com/opsdisk/yagooglesearch/issues/28> for the discussion.
 
 ## Google is blocking me!
 

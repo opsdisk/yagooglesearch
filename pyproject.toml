@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yagooglesearch"
+dynamic = ["version"]
+dependencies = ["beautifulsoup4>=4.9.3", "requests>=2.31.0", "requests[socks]"]
+requires-python = ">=3.6"
+authors = [{ name = "Brennon Thomas", email = "info@opsdisk.com" }]
+description = "A Python library for executing intelligent, realistic-looking, and tunable Google searches."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { file = "LICENSE" }
+keywords = ["python", "google", "search", "googlesearch"]
+classifiers = ["Programming Language :: Python"]
+
+[project.urls]
+Homepage = "https://github.com/opsdisk/yagooglesearch"
+Documentation = "https://github.com/opsdisk/yagooglesearch"
+Repository = "https://github.com/opsdisk/yagooglesearch"
+
+[tool.setuptools.dynamic]
+version = { attr = "yagooglesearch.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+yagooglesearch = ["*.txt"]
+
+[tool.black]
+line-length = 120
