@@ -5,13 +5,16 @@ import random
 import time
 import urllib
 
+
 # Third party Python libraries.
 from bs4 import BeautifulSoup
 import requests
 
+
 # Custom Python libraries.
 
-__version__ = "1.8.2"
+
+__version__ = "1.9.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -175,10 +178,17 @@ class SearchClient:
             ROOT_LOGGER.warning("The largest value allowed by Google for num is 100.  Setting num to 100.")
             self.num = 100
 
+        if 400 < self.max_search_result_urls_to_return:
+            ROOT_LOGGER.warning(
+                "yagooglesearch is usually only able to retrieve a maximum of ~400 results.  See README for more details."
+            )
+
         # Populate cookies with GOOGLE_ABUSE_EXEMPTION if it is provided.  Otherwise, initialize cookies to None.
         # It will be updated with each request in get_page().
         if self.google_exemption:
-            self.cookies = {"GOOGLE_ABUSE_EXEMPTION": self.google_exemption}
+            self.cookies = {
+                "GOOGLE_ABUSE_EXEMPTION": self.google_exemption,
+            }
         else:
             self.cookies = None
 
@@ -312,7 +322,8 @@ class SearchClient:
         """Increase the HTTP 429 cool off period."""
 
         new_http_429_cool_off_time_in_minutes = round(
-            self.http_429_cool_off_time_in_minutes * self.http_429_cool_off_factor, 2
+            self.http_429_cool_off_time_in_minutes * self.http_429_cool_off_factor,
+            2,
         )
         ROOT_LOGGER.info(
             f"Increasing HTTP 429 cool off time by a factor of {self.http_429_cool_off_factor}, "
@@ -321,8 +332,7 @@ class SearchClient:
         self.http_429_cool_off_time_in_minutes = new_http_429_cool_off_time_in_minutes
 
     def get_page(self, url):
-        """
-        Request the given URL and return the response page.
+        """Request the given URL and return the response page.
 
         :param str url: URL to retrieve.
 
