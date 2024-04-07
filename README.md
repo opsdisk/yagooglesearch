@@ -305,3 +305,4 @@ Project Link: [https://github.com/opsdisk/yagooglesearch](https://github.com/ops
 * [KennBro](https://github.com/KennBro) - <https://github.com/opsdisk/yagooglesearch/pull/9>
 * [ArshansGithub](https://github.com/ArshansGithub) - <https://github.com/opsdisk/yagooglesearch/pull/21>
 * [pguridi](https://github.com/pguridi) - <https://github.com/opsdisk/yagooglesearch/pull/38>
+* [libenc](https://github.com/libenc) - <https://github.com/opsdisk/yagooglesearch/pull/42>

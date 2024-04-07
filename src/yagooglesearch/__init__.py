@@ -14,7 +14,7 @@ import requests
 # Custom Python libraries.
 
 
-__version__ = "1.9.0"
+__version__ = "1.10.0"
 
 # Logging
 ROOT_LOGGER = logging.getLogger("yagooglesearch")
@@ -144,7 +144,11 @@ class SearchClient:
         self.query = urllib.parse.quote_plus(query)
         self.tld = tld
         self.lang_html_ui = lang_html_ui
-        self.lang_result = lang_result.lower()
+        self.lang_result = (
+            lang_result.lower()
+            if "-" not in lang_result
+            else f"{lang_result.split('-')[0].lower()}-{lang_result.split('-')[1].upper()}"
+        )
         self.tbs = tbs
         self.safe = safe
         self.start = start
