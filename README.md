@@ -4,7 +4,7 @@
 
 > **This repository is archived and no longer maintained.**
 
-In July/August 2026, Google changed how search results are returned, rendering libraries like `yagooglesearch` unreliable. As a result, this repository was archived on October 28, 2026, and is no longer maintained.
+In July/August 2026, Google changed how search results are returned, rendering libraries like `yagooglesearch` unreliable. As a result, this repository was archived on October 29, 2026, and is no longer maintained.
 
 For background:
 
